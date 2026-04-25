@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card">
+    <h1 class="page-title">Learn Financial Skills</h1>
+    <p class="subtitle">
+        Explore daily learning modules on budgeting, saving, and digital safety.
+    </p>
+</div>
+
+<div class="module-grid">
+    {% for module in modules %}
+    <div class="card">
+        <h2>{{ module.title }}</h2>
+        <p>{{ module.description }}</p>
+
+        <p>
+            <strong>Total Daily Lessons:</strong> {{ module.daily_lessons | length }}
+        </p>
+
+        <a class="button-link" href="{{ url_for('module_detail', module_id=module.id) }}">
+            Open Module
+        </a>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

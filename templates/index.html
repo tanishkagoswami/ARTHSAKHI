@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="hero">
+    <div class="hero-text">
+        <h1>Financial confidence for every woman</h1>
+        <p>
+            ArthSakhi helps women track expenses, stay alert against scams,
+            and learn essential money skills in one simple platform.
+        </p>
+    </div>
+
+    <div class="form-card">
+        <h3>Get Started</h3>
+        <form method="POST">
+            <label for="name">Your Name</label>
+            <input type="text" id="name" name="name" placeholder="Enter your name" required>
+
+            <label for="income">Monthly Income</label>
+            <input type="number" id="income" name="income" placeholder="Enter monthly income" required>
+
+            <label for="goal">Savings Goal</label>
+            <input type="number" id="goal" name="goal" placeholder="Enter your savings goal" required>
+
+            <button type="submit">Go to Dashboard</button>
+        </form>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card">
+    <h1 class="page-title">Scam Checker</h1>
+    <p>Paste any suspicious SMS, UPI text, or payment message below.</p>
+
+    <form method="POST">
+        <textarea name="message" rows="8" placeholder="Paste suspicious message here..." required>{{ message }}</textarea>
+        <button type="submit">Check Message</button>
+    </form>
+
+    {% if result %}
+    <div class="result-box {{ result.color }}">
+        <h3>{{ result.level }}</h3>
+        <p>{{ result.message }}</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

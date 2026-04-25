@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="page-title">Welcome, {{ user.name if user.name else "User" }}</h1>
+
+<div class="stats-grid">
+    <div class="card">
+        <h3>Monthly Income</h3>
+        <p>₹{{ user.income }}</p>
+    </div>
+    <div class="card">
+        <h3>Total Expenses</h3>
+        <p>₹{{ total_expense }}</p>
+    </div>
+    <div class="card">
+        <h3>Remaining Balance</h3>
+        <p>₹{{ remaining_balance }}</p>
+    </div>
+</div>
+
+<div class="card">
+    <h3>Savings Progress</h3>
+    <div class="progress-bar-bg">
+        <div class="progress-bar-fill" style="width: {{ savings_progress }}%;">
+            {{ savings_progress }}%
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h3>Add Expense</h3>
+    <form method="POST" action="{{ url_for('dashboard') }}" class="expense-form">
+        <input type="text" name="title" placeholder="Expense title" required>
+        <input type="number" name="amount" placeholder="Amount" required>
+
+        <select name="category" required>
+            <option value="">Select category</option>
+            <option value="Food">Food</option>
+            <option value="Travel">Travel</option>
+            <option value="Shopping">Shopping</option>
+            <option value="Bills">Bills</option>
+            <option value="Health">Health</option>
+            <option value="Other">Other</option>
+        </select>
+
+        <button type="submit">Add Expense</button>
+    </form>
+</div>
+
+<div class="card">
+    <h3>Expense History</h3>
+    {% if expenses %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Amount</th>
+                    <th>Category</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for expense in expenses %}
+                <tr>
+                    <td>{{ expense.title }}</td>
+                    <td>₹{{ expense.amount }}</td>
+                    <td>{{ expense.category }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No expenses added yet.</p>
+    {% endif %}
+</div>
+{% endblock %}

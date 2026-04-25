@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card">
+    <h1 class="page-title">{{ module.title }}</h1>
+    <p>{{ module.description }}</p>
+</div>
+
+<div class="card">
+    <h2>Today's Lesson</h2>
+
+    {% if today_lesson %}
+        <h3>Day {{ today_lesson.day }}: {{ today_lesson.title }}</h3>
+        <p>{{ today_lesson.content }}</p>
+    {% else %}
+        <p>No lesson available for today.</p>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h2>All Daily Lessons</h2>
+    <ul class="lesson-list">
+        {% for lesson in module.daily_lessons %}
+        <li>
+            <strong>Day {{ lesson.day }}:</strong> {{ lesson.title }} - {{ lesson.content }}
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+
+<div class="card">
+    <h3>Mini Quiz</h3>
+    <form method="POST">
+        <p><strong>{{ module.quiz.question }}</strong></p>
+
+        {% for option in module.quiz.options %}
+        <div class="radio-option">
+            <input type="radio" name="answer" value="{{ option }}" id="option{{ loop.index }}" required>
+            <label for="option{{ loop.index }}">{{ option }}</label>
+        </div>
+        {% endfor %}
+
+        <button type="submit">Submit Answer</button>
+    </form>
+
+    {% if quiz_result %}
+        <div class="result-box {% if quiz_result.status == 'correct' %}success{% else %}danger{% endif %}">
+            <p>{{ quiz_result.message }}</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

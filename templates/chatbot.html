@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card">
+    <h1 class="page-title">Sakhi AI Assistant</h1>
+    <p class="subtitle">
+        Ask for personalized help with budgeting, saving, financial planning, or scam safety.
+    </p>
+
+    <form method="POST">
+        <label for="message">Ask Sakhi AI</label>
+        <textarea id="message" name="message" rows="6" placeholder="Example: I spend too much on shopping. How should I control it?" required>{{ user_message }}</textarea>
+        <button type="submit">Ask</button>
+    </form>
+</div>
+
+{% if bot_response %}
+<div class="card">
+    <h3>AI Response</h3>
+    <p>{{ bot_response }}</p>
+</div>
+{% endif %}
+{% endblock %}
