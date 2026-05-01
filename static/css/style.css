@@ -281,3 +281,23 @@ body {
     background: transparent;
     color: #b7f7c4;
 }
+.ai-response h3 {
+    color: #b7f7c4;
+    margin-top: 16px;
+    margin-bottom: 8px;
+}
+
+.ai-response p {
+    color: #d8fbe0;
+    line-height: 1.7;
+    margin-bottom: 12px;
+}
+
+.ai-response ul {
+    margin-left: 20px;
+    margin-bottom: 12px;
+}
+
+.ai-response li {
+    margin-bottom: 8px;
+}

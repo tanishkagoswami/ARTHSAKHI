@@ -17,7 +17,9 @@
 {% if bot_response %}
 <div class="card">
     <h3>AI Response</h3>
-    <p>{{ bot_response }}</p>
+    <div class="ai-response">
+        {{ bot_response | safe }}
+    </div>
 </div>
 {% endif %}
 {% endblock %}
