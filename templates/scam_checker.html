@@ -1,12 +1,22 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="card">
+<div class="card scam-checker-card">
     <h1 class="page-title">Scam Checker</h1>
-    <p>Paste any suspicious SMS, UPI text, or payment message below.</p>
+    <p class="page-subtitle">
+        Paste any suspicious SMS, UPI text, email, or payment message below to check for scam signs.
+    </p>
 
-    <form method="POST">
-        <textarea name="message" rows="8" placeholder="Paste suspicious message here..." required>{{ message }}</textarea>
+    <form method="POST" class="scam-form">
+        abel for="message" class="form-label">Suspicious message</label>
+        <textarea 
+            id="message"
+            name="message" 
+            rows="8" 
+            placeholder="Example: Your bank account will be blocked today. Click this link and enter your OTP."
+            required
+        >{{ message }}</textarea>
+
         <button type="submit">Check Message</button>
     </form>
 
@@ -14,7 +24,37 @@
     <div class="result-box {{ result.color }}">
         <h3>{{ result.level }}</h3>
         <p>{{ result.message }}</p>
-    </div>
+
+        {% if result.reasons %}
+        <div class="result-section">
+            <h4>Why this was flagged</h4>
+            <ul>
+                {% for reason in result.reasons %}
+                >{{ reason }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        {% if result.scam_type %}
+        <div class="result-section">
+            <h4>Possible scam type</h4>
+            <p>{{ result.scam_type }}</p>
+        </div>
+        {% endif %}
+
+        {% if result.action %}
+        <div class="result-section">
+            <h4>What to do now</h4>
+            <p>{{ result.action }}</p>
+        </div>
+        {% endif %}
+    <iv>
     {% endif %}
+
+    <div class="safety-note">
+        <h4>Safety reminder</h4>
+        <p>Never share your OTP, UPI PIN, password, or bank details with anyone through SMS, calls, or unknown links.</p>
+    </div>
 </div>
 {% endblock %}

@@ -7,9 +7,19 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
+    <video autoplay muted loop playsinline id="bg-video">
+    <source src="{{ url_for('static', filename='videos/bg.mp4') }}" type="video/mp4">
+    Your browser does not support the video tag.
+</video>
+
+<div class="video-overlay"></div>
+
     <nav class="navbar">
         <div class="nav-container">
-            <h2 class="logo">ArthSakhi</h2>
+            <<div class="logo">
+    <img src="{{ url_for('static', filename='images/logo.jpg') }}" alt="ArthSakhi Logo">
+    <span>ArthSakhi</span>
+</div>
             <div class="nav-links">
                 <a href="{{ url_for('index') }}">Home</a>
                 <a href="{{ url_for('dashboard') }}">Dashboard</a>
@@ -18,7 +28,7 @@
                 <a href="{{ url_for('sakhi_ai') }}">Sakhi AI</a>
             </div>
         </div>
-    </nav>
+    </nav>S
 
     <main class="container">
         {% block content %}{% endblock %}

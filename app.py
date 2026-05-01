@@ -3,6 +3,7 @@ from datetime import date
 from dotenv import load_dotenv
 import google.generativeai as genai
 import os
+import re
 
 app = Flask(__name__)
 
@@ -13,12 +14,12 @@ if not api_key:
     raise ValueError("GEMINI_API_KEY not found in .env file")
 
 genai.configure(api_key=api_key)
-model = genai.GenerativeModel("gemini-2.0-flash")
+model = genai.GenerativeModel("gemini-2.5-flash")
 
 user_data = {
     "name": "",
-    "income": 0,
-    "goal": 0
+    "income": 0.0,
+    "goal": 0.0
 }
 
 expenses = []
@@ -75,6 +76,14 @@ learning_modules = [
 ]
 
 
+def safe_float(value, default=0.0):
+    try:
+        cleaned = str(value).replace(",", "").strip()
+        return float(cleaned) if cleaned else default
+    except (ValueError, TypeError):
+        return default
+
+
 def calculate_totals():
     total_expense = sum(expense["amount"] for expense in expenses)
     remaining_balance = user_data["income"] - total_expense
@@ -89,38 +98,98 @@ def calculate_totals():
 
 
 def check_scam_message(text):
-    text = text.lower()
+    original_text = text.strip()
+    normalized_text = original_text.lower()
+
+    if not original_text:
+        return {
+            "level": "No Message",
+            "message": "Please paste a message to analyze.",
+            "color": "warning",
+            "reasons": ["No message was provided."],
+            "scam_type": "Not available",
+            "action": "Paste an SMS, email, UPI request, or suspicious message to continue."
+        }
 
     high_risk_keywords = [
-        "otp", "urgent", "click here", "account blocked",
-        "kyc expired", "verify now", "bank suspended", "update pan immediately"
+        "otp", "cvv", "upi pin", "password", "click here", "verify now",
+        "account blocked", "account suspended", "kyc expired", "bank suspended",
+        "update pan immediately", "send money", "pay now", "refund link",
+        "claim prize", "gift card", "remote access", "apk file"
     ]
 
     medium_risk_keywords = [
-        "reward", "cashback", "free gift", "limited offer",
-        "claim now", "lottery", "winner"
+        "urgent", "reward", "cashback", "free gift", "limited offer",
+        "claim now", "lottery", "winner", "offer expires", "exclusive deal",
+        "congratulations", "bonus", "prize"
     ]
 
-    for keyword in high_risk_keywords:
-        if keyword in text:
-            return {
-                "level": "High Risk",
-                "message": "This message looks suspicious. Do not click links or share personal details.",
-                "color": "danger"
-            }
+    authority_keywords = [
+        "bank", "reserve bank", "rbi", "income tax", "police", "customs",
+        "courier", "electricity bill", "kyc", "upi", "paytm", "phonepe", "gpay"
+    ]
 
-    for keyword in medium_risk_keywords:
-        if keyword in text:
-            return {
-                "level": "Medium Risk",
-                "message": "This message may be suspicious. Verify the sender before taking action.",
-                "color": "warning"
-            }
+    reasons = []
+    score = 0
+    scam_type = "General suspicious message"
+
+    if any(keyword in normalized_text for keyword in high_risk_keywords):
+        reasons.append("The message asks for sensitive details or pushes a risky action.")
+        score += 4
+
+    if any(keyword in normalized_text for keyword in medium_risk_keywords):
+        reasons.append("The message uses urgency, rewards, or pressure tactics.")
+        score += 2
+
+    if any(keyword in normalized_text for keyword in authority_keywords):
+        reasons.append("The sender claims to be a trusted service, bank, or authority.")
+        score += 1
+
+    if re.search(r"http[s]?://|www\.|bit\.ly|tinyurl|goo\.gl", normalized_text):
+        reasons.append("The message contains a link that should be verified carefully.")
+        score += 3
+
+    if any(word in normalized_text for word in ["otp", "cvv", "upi pin", "password"]):
+        reasons.append("It asks for private financial or account information.")
+        score += 4
+        scam_type = "Phishing / account takeover scam"
+
+    if any(word in normalized_text for word in ["kyc", "bank", "account blocked", "verify now"]):
+        scam_type = "Banking or KYC scam"
+
+    if any(word in normalized_text for word in ["cashback", "reward", "lottery", "winner", "prize"]):
+        scam_type = "Prize / reward scam"
+
+    if any(word in normalized_text for word in ["send money", "pay now", "upi", "collect request"]):
+        scam_type = "UPI / payment scam"
+
+    if score >= 6:
+        return {
+            "level": "High Risk",
+            "message": "This message shows multiple strong scam indicators. Do not click links, share details, or send money.",
+            "color": "high-risk",
+            "reasons": reasons or ["Multiple suspicious patterns were detected."],
+            "scam_type": scam_type,
+            "action": "Do not reply, do not click any link, do not share OTP/PIN/password, and verify only through the official app or website."
+        }
+
+    if score >= 3:
+        return {
+            "level": "Medium Risk",
+            "message": "This message has suspicious elements. Verify the sender carefully before taking any action.",
+            "color": "medium-risk",
+            "reasons": reasons or ["Some suspicious patterns were detected."],
+            "scam_type": scam_type,
+            "action": "Pause before responding. Cross-check the message using the sender’s official website, app, or customer support number."
+        }
 
     return {
         "level": "Low Risk",
-        "message": "No strong scam pattern detected, but always stay cautious with unknown messages.",
-        "color": "success"
+        "message": "No strong scam pattern was detected, but you should still be careful with unknown messages and links.",
+        "color": "low-risk",
+        "reasons": ["No major phishing or payment scam triggers were found in the message."],
+        "scam_type": "No clear scam pattern detected",
+        "action": "Stay cautious, especially if the sender is unknown or asks you to click a link or share account information."
     }
 
 
@@ -156,12 +225,17 @@ def generate_ai_response(user_message):
     User question:
     {user_message}
 
+    Respond in clean, professional HTML only.
     Rules:
-    - Give practical, simple, supportive advice.
-    - Focus on budgeting, saving, scam awareness, and financial discipline.
-    - Do not claim to be a licensed financial advisor.
-    - Keep the answer short and clear.
-    - End with: This is educational guidance, not professional financial advice.
+    - Use only simple HTML tags: <h3>, <p>, <ul>, <li>, <strong>, <br>
+    - Make the answer well-structured and easy to read
+    - Start with a short supportive introduction
+    - If the user asks about budgeting, break the answer into sections
+    - Use bullet points where helpful
+    - Keep the tone warm, practical, and professional
+    - Do not include markdown like ** or ##
+    - Do not include ```html
+    - Do not include <html>, <body>, or <head> tags
     """
 
     response = model.generate_content(prompt)
@@ -171,9 +245,9 @@ def generate_ai_response(user_message):
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
-        user_data["name"] = request.form.get("name", "")
-        user_data["income"] = float(request.form.get("income", 0))
-        user_data["goal"] = float(request.form.get("goal", 0))
+        user_data["name"] = request.form.get("name", "").strip()
+        user_data["income"] = safe_float(request.form.get("income", 0))
+        user_data["goal"] = safe_float(request.form.get("goal", 0))
         return redirect(url_for("dashboard"))
 
     return render_template("index.html")
@@ -182,14 +256,14 @@ def index():
 @app.route("/dashboard", methods=["GET", "POST"])
 def dashboard():
     if request.method == "POST":
-        title = request.form.get("title")
-        amount = request.form.get("amount")
-        category = request.form.get("category")
+        title = request.form.get("title", "").strip()
+        amount = safe_float(request.form.get("amount", 0))
+        category = request.form.get("category", "").strip()
 
-        if title and amount and category:
+        if title and amount > 0 and category:
             expenses.append({
                 "title": title,
-                "amount": float(amount),
+                "amount": amount,
                 "category": category
             })
 
@@ -211,10 +285,14 @@ def scam_checker():
     message = ""
 
     if request.method == "POST":
-        message = request.form.get("message", "")
+        message = request.form.get("message", "").strip()
         result = check_scam_message(message)
 
-    return render_template("scam_checker.html", result=result, message=message)
+    return render_template(
+        "scam_checker.html",
+        result=result,
+        message=message
+    )
 
 
 @app.route("/learn")
@@ -237,9 +315,12 @@ def sakhi_ai():
                 error_text = str(e)
 
                 if "429" in error_text or "quota" in error_text.lower():
-                    bot_response = "Sakhi AI is temporarily unavailable because the Gemini API quota has been exceeded. Please try again later or check your Google AI quota and billing settings."
+                    bot_response = (
+                        "<p>Sakhi AI is temporarily unavailable because the Gemini API quota has been exceeded. "
+                        "Please try again later or check your Google AI quota and billing settings.</p>"
+                    )
                 else:
-                    bot_response = f"Something went wrong: {error_text}"
+                    bot_response = f"<p>Something went wrong: {error_text}</p>"
 
     return render_template(
         "chatbot.html",
@@ -250,13 +331,8 @@ def sakhi_ai():
 
 @app.route("/module/<int:module_id>", methods=["GET", "POST"])
 def module_detail(module_id):
-    selected_module = None
+    selected_module = next((module for module in learning_modules if module["id"] == module_id), None)
     quiz_result = None
-
-    for module in learning_modules:
-        if module["id"] == module_id:
-            selected_module = module
-            break
 
     if not selected_module:
         return "Module not found", 404
