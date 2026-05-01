@@ -10,11 +10,10 @@ app = Flask(__name__)
 load_dotenv()
 api_key = os.getenv("GEMINI_API_KEY")
 
-if not api_key:
-    raise ValueError("GEMINI_API_KEY not found in .env file")
-
-genai.configure(api_key=api_key)
-model = genai.GenerativeModel("gemini-2.5-flash")
+model = None
+if api_key:
+    genai.configure(api_key=api_key)
+    model = genai.GenerativeModel("gemini-2.5-flash")
 
 user_data = {
     "name": "",
@@ -205,6 +204,11 @@ def get_today_lesson(module):
 
 
 def generate_ai_response(user_message):
+    if model is None:
+        return (
+            "<p>Sakhi AI is currently unavailable because the Gemini API key is not configured on the server.</p>"
+        )
+
     total_expense, remaining_balance, savings_progress = calculate_totals()
 
     user_context = f"""
